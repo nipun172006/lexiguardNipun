@@ -146,7 +146,7 @@ function normalizeReport(raw, meta) {
   const reviewBeforeSigning = strings(raw.reviewBeforeSigning);
   const futureScenarios = ensureArray(raw.futureScenarios).map((scenario, index) => normalizeScenario(scenario, index));
   const obligationTimeline = ensureArray(raw.obligationTimeline).map((event, index) => normalizeTimelineEvent(event, index));
-  const riskScore = normalizeOverallRiskScore(raw.overallRiskScore, raw.overallRiskLabel);
+  const riskScore = normalizeOverallRiskScore(raw.overallRiskScore, raw.overallRiskLabel, clauseRisks);
 
   return {
     id: stringOr(raw.id, `lexguard-${Date.now()}`),
@@ -342,19 +342,41 @@ function normalizeSeverityBreakdown(value, fallback) {
   };
 }
 
-function normalizeOverallRiskScore(score, label) {
+function normalizeOverallRiskScore(score, label, clauseRisks = []) {
+  const evidenceScore = scoreFromClauseRisks(clauseRisks);
+  let normalizedScore;
+
   if (score !== undefined && score !== null && score !== "") {
-    return clampScore(score);
+    normalizedScore = clampScore(score);
+  } else {
+    const labelScores = {
+      low: 18,
+      medium: 42,
+      high: 68,
+      critical: 86,
+    };
+
+    normalizedScore = labelScores[normalizeSeverity(label, "medium")];
   }
 
-  const labelScores = {
+  if (evidenceScore === null) return normalizedScore;
+
+  return Math.max(normalizedScore, evidenceScore);
+}
+
+function scoreFromClauseRisks(risks) {
+  if (!risks.length) return null;
+
+  const severityFloors = {
     low: 18,
     medium: 42,
     high: 68,
     critical: 86,
   };
+  const highestFloor = Math.max(...risks.map((risk) => severityFloors[normalizeSeverity(risk.severity, "medium")]));
+  const volumeBump = Math.min(10, Math.max(0, risks.length - 1) * 2);
 
-  return labelScores[normalizeSeverity(label, "medium")];
+  return clampScore(highestFloor + volumeBump);
 }
 
 function createSeverityBreakdown(risks) {
