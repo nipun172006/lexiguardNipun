@@ -8,6 +8,7 @@
     "dev:server": "node --watch-path=server server/index.mjs",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "build": "vite build",
+    "test": "node --test tests/*.test.mjs",
     "start": "node server/index.mjs",
     "preview": "vite preview --host 127.0.0.1"
   },

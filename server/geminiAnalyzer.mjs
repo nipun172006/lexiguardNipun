@@ -139,7 +139,7 @@ export function createFallbackReportFromError(error, meta = {}) {
   };
 }
 
-function normalizeReport(raw, meta) {
+export function normalizeReport(raw, meta) {
   const clauseRisks = ensureArray(raw.clauseRisks).map((risk, index) => normalizeClauseRisk(risk, index));
   const fallbackBreakdown = createSeverityBreakdown(clauseRisks);
   const topRisks = normalizeTopRisks(raw.topRisks, clauseRisks);
